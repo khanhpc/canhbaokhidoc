@@ -4,8 +4,7 @@ import { ref, onValue, set, push, remove } from "firebase/database";
 import { signOut } from "firebase/auth";
 import SensorCard from "./SensorCard";
 
-// --- 1. DEVICE ITEM ---
-// Nhận thêm prop: onViewKey để gọi ngược ra Dashboard
+// --- 1. DEVICE ITEM (ĐÃ SỬA XÓA SẠCH + CĂN CHỈNH ĐẸP) ---
 const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
   const [deviceData, setDeviceData] = useState(null);
 
@@ -17,9 +16,18 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
     return () => unsubscribe();
   }, [deviceId]);
 
+  // --- HÀM XÓA MỚI (XÓA CẢ GỐC LẪN NGỌN) ---
   const handleDelete = () => {
-    if (window.confirm(`Xóa thiết bị "${deviceName}"?`)) {
+    if (
+      window.confirm(
+        `CẢNH BÁO: Bạn có chắc muốn xóa VĨNH VIỄN thiết bị "${deviceName}"?\nDữ liệu trên Firebase cũng sẽ mất!`,
+      )
+    ) {
+      // 1. Xóa liên kết trong tài khoản User
       remove(ref(db, `users/${userId}/${deviceId}`));
+
+      // 2. Xóa luôn dữ liệu gốc trong nhánh devices
+      remove(ref(db, `devices/${deviceId}`));
     }
   };
 
@@ -33,13 +41,6 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
     return <div style={{ color: "#777", padding: "20px" }}>Đang tải...</div>;
 
   const isDanger = deviceData.isDanger || deviceData.smokeDanger;
-  const cardStyle = isDanger
-    ? {
-        ...styles.cardContainer,
-        border: "2px solid #ff5252",
-        background: "rgba(255, 82, 82, 0.15)",
-      }
-    : styles.cardContainer;
   const gasVal = deviceData.gasLevel
     ? Number(deviceData.gasLevel).toFixed(1)
     : 0;
@@ -47,50 +48,50 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
     ? Number(deviceData.smokeLevel).toFixed(1)
     : 0;
 
+  // Style đặc biệt khi cháy
+  const containerStyle = isDanger
+    ? {
+        ...styles.cardContainer,
+        border: "2px solid #ff5252",
+        boxShadow: "0 0 20px rgba(255, 82, 82, 0.4)",
+      }
+    : styles.cardContainer;
+
   let lastUpdateStr = "...";
   if (deviceData.lastUpdate) {
     lastUpdateStr = new Date(deviceData.lastUpdate).toLocaleString("vi-VN", {
       hour: "2-digit",
       minute: "2-digit",
+      second: "2-digit",
       day: "2-digit",
       month: "2-digit",
+      year: "2-digit",
     });
   }
 
   return (
-    <div style={cardStyle}>
-      <div style={{ textAlign: "center", marginBottom: "10px", width: "100%" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+    <div style={containerStyle}>
+      {/* HEADER CARD */}
+      <div style={styles.cardHeader}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span style={{ fontSize: "1.2rem" }}>{isDanger ? "🔥" : "📍"}</span>
           <h3
             style={{
-              margin: "0",
+              margin: 0,
               color: isDanger ? "#ff5252" : "#4db6ac",
               fontSize: "1.1rem",
             }}
           >
-            {isDanger ? "🔥 " : "📍 "} {deviceName}
+            {deviceName}
           </h3>
-          <span style={{ fontSize: "0.7rem", color: "#aaa" }}>
-            {lastUpdateStr}
-          </span>
         </div>
+        <span style={{ fontSize: "0.75rem", color: "#aaa" }}>
+          {lastUpdateStr}
+        </span>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "5px",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          width: "100%",
-        }}
-      >
+      {/* KHU VỰC CẢM BIẾN (Căn giữa đều) */}
+      <div style={styles.sensorRow}>
         <div style={wrapperStyle(deviceData.configGas)}>
           <SensorCard
             title="GAS"
@@ -109,20 +110,13 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
         </div>
       </div>
 
+      {/* CONTROL PANEL (Chia hàng cột rõ ràng để không bị lệch) */}
       <div style={styles.controlBox}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "10px",
-          }}
-        >
+        {/* Hàng 1: Loa + Xem Key */}
+        <div style={styles.controlRow}>
           <button onClick={toggleMute} style={muteBtnStyle(deviceData.isMuted)}>
-            {deviceData.isMuted ? "🔇 ĐÃ TẮT CÒI" : "🔊 LOA ĐANG BẬT"}
+            {deviceData.isMuted ? "🔇 LOA TẮT" : "🔊 LOA BẬT"}
           </button>
-
-          {/* NÚT XEM KEY MỚI */}
           <button
             onClick={() => onViewKey(deviceId, deviceName)}
             style={styles.viewKeyBtn}
@@ -130,29 +124,34 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
             🔑 Xem Key
           </button>
         </div>
-        <div style={{ display: "flex", gap: "5px" }}>
+
+        {/* Hàng 2: Nút Gas + Nút Lửa */}
+        <div style={styles.controlRow}>
           <ControlToggle
             label="Gas"
             isOn={deviceData.configGas}
             onClick={() => toggleConfig("configGas", deviceData.configGas)}
+            color="#00e676"
           />
           <ControlToggle
             label="Lửa"
             isOn={deviceData.configSmoke}
             onClick={() => toggleConfig("configSmoke", deviceData.configSmoke)}
+            color="#00e676"
           />
         </div>
-      </div>
 
-      <button onClick={handleDelete} style={styles.deleteLink}>
-        Gỡ thiết bị
-      </button>
+        {/* Nút Gỡ */}
+        <button onClick={handleDelete} style={styles.deleteBtn}>
+          Gỡ thiết bị này
+        </button>
+      </div>
     </div>
   );
 };
 
-const ControlToggle = ({ label, isOn, onClick }) => (
-  <button style={toggleBtnStyle(isOn)} onClick={onClick}>
+const ControlToggle = ({ label, isOn, onClick, color }) => (
+  <button style={toggleBtnStyle(isOn, color)} onClick={onClick}>
     {label}: {isOn ? "ON" : "OFF"}
   </button>
 );
@@ -161,32 +160,23 @@ const ControlToggle = ({ label, isOn, onClick }) => (
 function Dashboard({ user }) {
   const [userDevices, setUserDevices] = useState(null);
   const [dangerList, setDangerList] = useState([]);
-
-  // Modal Thêm thiết bị
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState("");
-
-  // Modal Xem Key (MỚI)
-  const [viewingKey, setViewingKey] = useState(null); // Lưu Key đang xem
-  const [viewingName, setViewingName] = useState(""); // Lưu tên đang xem
+  const [viewingKey, setViewingKey] = useState(null);
+  const [viewingName, setViewingName] = useState("");
 
   useEffect(() => {
     const userRef = ref(db, `users/${user.uid}`);
-    onValue(userRef, (snapshot) => {
-      setUserDevices(snapshot.val());
-    });
+    onValue(userRef, (snapshot) => setUserDevices(snapshot.val()));
   }, [user.uid]);
 
-  // Logic check cháy (Header)
   useEffect(() => {
     if (!userDevices) return;
-    const keys = Object.keys(userDevices);
-    const checkDangers = () => {
+    const interval = setInterval(() => {
       const currentDangers = [];
-      keys.forEach((key) => {
-        const devRef = ref(db, `devices/${key}/home`);
+      Object.keys(userDevices).forEach((key) => {
         onValue(
-          devRef,
+          ref(db, `devices/${key}/home`),
           (snap) => {
             const d = snap.val();
             if (d && (d.isDanger || d.smokeDanger)) {
@@ -198,12 +188,10 @@ function Dashboard({ user }) {
           { onlyOnce: true },
         );
       });
-    };
-    const interval = setInterval(checkDangers, 2000);
+    }, 2000);
     return () => clearInterval(interval);
   }, [userDevices]);
 
-  // Logic thêm thiết bị
   const handleConfirmAdd = () => {
     if (!newDeviceName.trim()) return alert("Nhập tên đi bạn ơi!");
     const newDeviceRef = push(ref(db, "devices"));
@@ -226,33 +214,17 @@ function Dashboard({ user }) {
     }).then(() => {
       setNewDeviceName("");
       setIsAddModalOpen(false);
-      // Mở luôn cái bảng xem key sau khi tạo xong
       handleViewKey(newKey, newDeviceName);
     });
   };
 
-  // Logic Mở bảng xem Key
   const handleViewKey = (key, name) => {
     setViewingKey(key);
     setViewingName(name);
   };
-
-  // Logic Copy (Hỗ trợ mobile)
   const handleCopyKey = () => {
-    const textArea = document.createElement("textarea");
-    textArea.value = viewingKey;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-9999px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-      document.execCommand("copy");
-      alert("Đã copy KEY thành công!");
-    } catch (err) {
-      alert("Lỗi copy, bạn hãy bôi đen và copy thủ công nhé.");
-    }
-    document.body.removeChild(textArea);
+    navigator.clipboard.writeText(viewingKey);
+    alert("Đã copy KEY!");
   };
 
   return (
@@ -268,19 +240,29 @@ function Dashboard({ user }) {
         <div style={{ flex: 1 }}>
           {dangerList.length > 0 ? (
             <div style={{ animation: "blinker 1s linear infinite" }}>
-              <h2 style={{ margin: 0, fontSize: "1.2rem", textAlign: "center" }}>
+              <h2
+                style={{ margin: 0, fontSize: "1.2rem", textAlign: "center" }}
+              >
                 🔥 CẢNH BÁO NGUY HIỂM!
               </h2>
-              <div style={{ fontSize: "0.9rem", opacity: 0.9, textAlign: "center" }}>
+              <div style={{ fontSize: "0.9rem", textAlign: "center" }}>
                 Tại: <b>{dangerList.join(", ")}</b>
               </div>
             </div>
           ) : (
             <div>
-              <h2 style={{ margin: 0, fontSize: "1.1rem", textAlign: "center" }}>
+              <h2
+                style={{ margin: 0, fontSize: "1.1rem", textAlign: "center" }}
+              >
                 🛡️ HỆ THỐNG AN TOÀN
               </h2>
-              <div style={{ fontSize: "0.8rem", opacity: 0.8, textAlign: "center" }}>
+              <div
+                style={{
+                  fontSize: "0.8rem",
+                  opacity: 0.8,
+                  textAlign: "center",
+                }}
+              >
                 -----KhanhDTK-----
               </div>
             </div>
@@ -317,13 +299,13 @@ function Dashboard({ user }) {
               deviceId={key}
               deviceName={userDevices[key].name}
               userId={user.uid}
-              onViewKey={handleViewKey} // Truyền hàm mở bảng key vào
+              onViewKey={handleViewKey}
             />
           ))
         )}
       </div>
 
-      {/* --- MODAL 1: THÊM THIẾT BỊ --- */}
+      {/* MODAL THÊM */}
       {isAddModalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
@@ -351,7 +333,7 @@ function Dashboard({ user }) {
         </div>
       )}
 
-      {/* --- MODAL 2: XEM KEY (CHI TIẾT) --- */}
+      {/* MODAL XEM KEY */}
       {viewingKey && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
@@ -367,14 +349,7 @@ function Dashboard({ user }) {
             <p style={{ marginBottom: "5px" }}>
               Thiết bị: <b>{viewingName}</b>
             </p>
-
-            {/* Hộp chứa Key to đùng */}
             <div style={styles.bigKeyBox}>{viewingKey}</div>
-
-            <p style={{ fontSize: "0.8rem", color: "#aaa", marginTop: "5px" }}>
-              Copy mã này và dán vào phần cấu hình WiFi của ESP32.
-            </p>
-
             <button
               onClick={handleCopyKey}
               style={{
@@ -386,7 +361,6 @@ function Dashboard({ user }) {
             >
               📋 SAO CHÉP MÃ
             </button>
-
             <button
               onClick={() => setViewingKey(null)}
               style={{
@@ -404,23 +378,21 @@ function Dashboard({ user }) {
   );
 }
 
-// --- CSS STYLES (Đã Căn Giữa Chuẩn 100%) ---
+// --- CSS STYLES (ĐÃ CĂN CHỈNH THẲNG HÀNG) ---
 const styles = {
   pageWrapper: {
-    background: "#3b4f52",
+    background: "#37817f",
     minHeight: "100vh",
     color: "white",
     fontFamily: "sans-serif",
     paddingBottom: "50px",
-    boxSizing: "border-box", // Quan trọng để không bị tràn
+    boxSizing: "border-box",
   },
-
-  // Header Sticky
   alertHeaderSafe: {
     position: "sticky",
     top: 0,
     zIndex: 99,
-    background: "rgba(29, 185, 84, 0.95)", // Màu xanh Spotify dịu mắt
+    background: "rgba(0, 176, 155, 0.95)",
     backdropFilter: "blur(10px)",
     padding: "15px 20px",
     borderBottomLeftRadius: "20px",
@@ -434,7 +406,7 @@ const styles = {
     position: "sticky",
     top: 0,
     zIndex: 99,
-    background: "rgba(255, 65, 54, 0.95)",
+    background: "rgba(255, 65, 108, 0.95)",
     backdropFilter: "blur(10px)",
     padding: "20px",
     borderBottomLeftRadius: "20px",
@@ -444,8 +416,6 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-between",
   },
-
-  // Danh sách thiết bị
   gridList: {
     padding: "20px",
     display: "flex",
@@ -454,25 +424,47 @@ const styles = {
     gap: "20px",
   },
 
-  // Thẻ Card
+  // CARD CONTAINER
   cardContainer: {
-    background: "#3b4f52",
+    background: "#1e1e1e",
     padding: "20px",
     borderRadius: "20px",
     width: "100%",
-    maxWidth: "360px", // Giới hạn chiều ngang trên PC
+    maxWidth: "380px", // Giới hạn chiều ngang
     border: "1px solid #333",
     boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
+  },
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottom: "1px solid rgba(255,255,255,0.1)",
+    paddingBottom: "10px",
+  },
+  sensorRow: {
+    display: "flex",
+    gap: "10px",
+    justifyContent: "center",
   },
 
+  // CONTROL PANEL (Dùng Flex Column để xếp hàng dọc)
   controlBox: {
     background: "rgba(255,255,255,0.05)",
     padding: "15px",
     borderRadius: "15px",
-    marginTop: "15px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px", // Cách nhau 10px
+  },
+  // Mỗi hàng control (Dùng Flex Row)
+  controlRow: {
+    display: "flex",
+    gap: "10px", // Các nút cách nhau 10px
   },
 
-  // Các nút bấm
   miniBtn: {
     padding: "6px 12px",
     borderRadius: "20px",
@@ -482,59 +474,56 @@ const styles = {
     fontSize: "0.75rem",
     fontWeight: "bold",
     cursor: "pointer",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
   },
+
+  // CÁC NÚT BẤM (Dùng flex: 1 để tự co giãn đều nhau)
   viewKeyBtn: {
-    padding: "8px 15px",
+    flex: 1, // Tự giãn đều
+    padding: "10px",
     borderRadius: "10px",
     border: "1px solid #4db6ac",
-    background: "rgba(77, 182, 172, 0.1)",
+    background: "transparent",
     color: "#4db6ac",
-    fontSize: "0.8rem",
+    fontSize: "0.85rem",
     fontWeight: "bold",
     cursor: "pointer",
-    transition: "all 0.2s",
   },
-  deleteLink: {
-    marginTop: "15px",
+  deleteBtn: {
+    width: "100%", // Nút xóa full chiều ngang
+    padding: "10px",
     background: "transparent",
-    border: "none",
+    border: "1px solid #ff5252",
     color: "#ff5252",
     cursor: "pointer",
     fontSize: "0.8rem",
-    textDecoration: "underline",
-    width: "100%",
-    opacity: 0.8,
+    borderRadius: "8px",
+    marginTop: "5px",
   },
 
-  // --- MODAL (POPUP) CĂN GIỮA TUYỆT ĐỐI ---
+  // MODAL
   modalOverlay: {
     position: "fixed",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    background: "rgba(0,0,0,0.85)", // Nền tối hơn chút
+    background: "rgba(0,0,0,0.85)",
     zIndex: 10000,
-    // Dùng GRID để căn giữa bất chấp mọi loại màn hình
     display: "grid",
     placeItems: "center",
-    padding: "20px", // Để popup không dính sát lề khi màn hình quá nhỏ
+    padding: "20px",
   },
   modalContent: {
     background: "#222",
     padding: "30px",
     borderRadius: "25px",
     width: "100%",
-    maxWidth: "340px", // Độ rộng lý tưởng cho Mobile
+    maxWidth: "340px",
     textAlign: "center",
     border: "1px solid rgba(255,255,255,0.1)",
     boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
-    position: "relative", // Để nội dung bên trong ổn định
     boxSizing: "border-box",
   },
-
-  // Input và Button trong Modal
   modalInput: {
     width: "100%",
     padding: "15px",
@@ -558,7 +547,6 @@ const styles = {
     fontWeight: "bold",
     cursor: "pointer",
     fontSize: "1rem",
-    boxShadow: "0 5px 15px rgba(0, 230, 118, 0.3)",
   },
   modalCancelBtn: {
     flex: 1,
@@ -570,19 +558,17 @@ const styles = {
     cursor: "pointer",
     fontSize: "1rem",
   },
-
   bigKeyBox: {
     background: "#0a0a0a",
     color: "#00e676",
     padding: "20px",
     borderRadius: "12px",
     fontFamily: "monospace",
-    fontSize: "1.3rem", // Chữ to đùng
+    fontSize: "1.3rem",
     fontWeight: "bold",
     wordBreak: "break-all",
     marginTop: "15px",
     border: "2px dashed #333",
-    userSelect: "text", // Cho phép bôi đen
   },
 };
 
@@ -593,24 +579,25 @@ const wrapperStyle = (isEnabled) => ({
 });
 const muteBtnStyle = (isMuted) => ({
   flex: 1,
-  padding: "8px",
-  borderRadius: "8px",
+  padding: "10px",
+  borderRadius: "10px",
   border: "none",
   background: isMuted ? "#ffc107" : "#455a64",
   color: isMuted ? "#000" : "#fff",
   fontWeight: "bold",
-  fontSize: "0.7rem",
-  marginRight: "10px",
+  fontSize: "0.8rem",
+  cursor: "pointer",
 });
-const toggleBtnStyle = (isOn) => ({
-  padding: "5px 10px",
-  borderRadius: "5px",
+const toggleBtnStyle = (isOn, color) => ({
+  padding: "10px",
+  borderRadius: "10px",
   border: "none",
-  background: isOn ? "#00e676" : "#444",
+  background: isOn ? color : "#444",
   color: isOn ? "#000" : "#ccc",
-  fontSize: "0.7rem",
+  fontSize: "0.8rem",
   fontWeight: "bold",
   flex: 1,
+  cursor: "pointer",
 });
 
 export default Dashboard;
