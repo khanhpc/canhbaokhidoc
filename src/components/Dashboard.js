@@ -381,7 +381,7 @@ function Dashboard({ user }) {
 // --- CSS STYLES (ĐÃ CĂN CHỈNH THẲNG HÀNG) ---
 const styles = {
   pageWrapper: {
-    background: "#37817f",
+    background: "#1c1c1d",
     minHeight: "100vh",
     color: "white",
     fontFamily: "sans-serif",
@@ -392,7 +392,7 @@ const styles = {
     position: "sticky",
     top: 0,
     zIndex: 99,
-    background: "rgba(0, 176, 155, 0.95)",
+    background: "#1c1e21",
     backdropFilter: "blur(10px)",
     padding: "15px 20px",
     borderBottomLeftRadius: "20px",
@@ -430,7 +430,7 @@ const styles = {
     padding: "20px",
     borderRadius: "20px",
     width: "100%",
-    maxWidth: "380px", // Giới hạn chiều ngang
+    maxWidth: "390px", // Giới hạn chiều ngang
     border: "1px solid #333",
     boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
     display: "flex",
