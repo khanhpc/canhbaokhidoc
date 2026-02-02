@@ -102,7 +102,7 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
         </div>
         <div style={wrapperStyle(deviceData.configSmoke)}>
           <SensorCard
-            title="KHÓI"
+            title="LỬA"
             value={smokeVal}
             unit="%"
             isDanger={deviceData.smokeDanger}
