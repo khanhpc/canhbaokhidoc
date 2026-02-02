@@ -23,7 +23,20 @@ function Auth() {
       }
       navigate("/");
     } catch (error) {
-      alert("Lỗi: " + error.message);
+      // --- SỬA ĐOẠN NÀY ĐỂ BÁO LỖI TIẾNG VIỆT ---
+      console.error("Lỗi đăng nhập:", error.code); // In mã lỗi ra xem cho chắc
+
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        alert("❌ Sai Email hoặc Mật khẩu! Vui lòng kiểm tra lại.");
+      } else if (error.code === 'auth/email-already-in-use') {
+        alert("⚠️ Email này đã được đăng ký rồi. Hãy chuyển sang Đăng nhập.");
+      } else if (error.code === 'auth/weak-password') {
+        alert("⚠️ Mật khẩu yếu quá (phải trên 6 ký tự).");
+      } else if (error.code === 'auth/too-many-requests') {
+        alert("⛔ Bạn thử sai nhiều quá. Hãy đợi một chút rồi thử lại.");
+      } else {
+        alert("Lỗi hệ thống: " + error.message);
+      }
     }
   };
 
