@@ -13,9 +13,7 @@ const firebaseConfig = {
   measurementId: "G-SQVGB49CEW"
 };
 
-// Khởi tạo app
 const app = initializeApp(firebaseConfig);
 
-// Xuất biến 'db' ra để App.js sử dụng
 export const db = getDatabase(app);
 export const auth = getAuth(app);

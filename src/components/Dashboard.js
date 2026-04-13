@@ -4,7 +4,6 @@ import { ref, onValue, set, push, remove } from "firebase/database";
 import { signOut } from "firebase/auth";
 import SensorCard from "./SensorCard";
 
-// --- 1. DEVICE ITEM (ĐÃ SỬA XÓA SẠCH + CĂN CHỈNH ĐẸP) ---
 const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
   const [deviceData, setDeviceData] = useState(null);
 
@@ -16,17 +15,14 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
     return () => unsubscribe();
   }, [deviceId]);
 
-  // --- HÀM XÓA MỚI (XÓA CẢ GỐC LẪN NGỌN) ---
   const handleDelete = () => {
     if (
       window.confirm(
         `CẢNH BÁO: Bạn có chắc muốn xóa VĨNH VIỄN thiết bị "${deviceName}"?\nDữ liệu trên Firebase cũng sẽ mất!`,
       )
     ) {
-      // 1. Xóa liên kết trong tài khoản User
       remove(ref(db, `users/${userId}/${deviceId}`));
 
-      // 2. Xóa luôn dữ liệu gốc trong nhánh devices
       remove(ref(db, `devices/${deviceId}`));
     }
   };
@@ -48,7 +44,6 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
     ? Number(deviceData.smokeLevel).toFixed(1)
     : 0;
 
-  // Style đặc biệt khi cháy
   const containerStyle = isDanger
     ? {
         ...styles.cardContainer,
@@ -378,7 +373,6 @@ function Dashboard({ user }) {
   );
 }
 
-// --- CSS STYLES (ĐÃ CĂN CHỈNH THẲNG HÀNG) ---
 const styles = {
   pageWrapper: {
     background: "#1c1c1d",
@@ -424,7 +418,6 @@ const styles = {
     gap: "20px",
   },
 
-  // CARD CONTAINER
   cardContainer: {
     background: "#1e1e1e",
     padding: "20px",
@@ -457,12 +450,11 @@ const styles = {
     borderRadius: "15px",
     display: "flex",
     flexDirection: "column",
-    gap: "10px", // Cách nhau 10px
+    gap: "10px",
   },
-  // Mỗi hàng control (Dùng Flex Row)
   controlRow: {
     display: "flex",
-    gap: "10px", // Các nút cách nhau 10px
+    gap: "10px",
   },
 
   miniBtn: {
@@ -476,7 +468,6 @@ const styles = {
     cursor: "pointer",
   },
 
-  // CÁC NÚT BẤM (Dùng flex: 1 để tự co giãn đều nhau)
   viewKeyBtn: {
     flex: 1, // Tự giãn đều
     padding: "10px",
@@ -489,7 +480,7 @@ const styles = {
     cursor: "pointer",
   },
   deleteBtn: {
-    width: "100%", // Nút xóa full chiều ngang
+    width: "100%",
     padding: "10px",
     background: "transparent",
     border: "1px solid #ff5252",
