@@ -1,18 +1,61 @@
 import React, { useState, useEffect } from "react";
 import { db, auth } from "../firebase";
-import { ref, onValue, set, push, remove } from "firebase/database";
+import {
+  ref,
+  onValue,
+  set,
+  push,
+  remove,
+  query,
+  limitToLast,
+} from "firebase/database";
 import { signOut } from "firebase/auth";
 import SensorCard from "./SensorCard";
+import HistoryChart from "./HistoryChart";
 
 const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
   const [deviceData, setDeviceData] = useState(null);
+  const [historyData, setHistoryData] = useState([]);
 
   useEffect(() => {
     const deviceRef = ref(db, `devices/${deviceId}/home`);
     const unsubscribe = onValue(deviceRef, (snapshot) => {
-      setDeviceData(snapshot.val());
+      const data = snapshot.val();
+      setDeviceData(data);
+
+      if (data && data.lastUpdate) {
+        push(ref(db, `devices/${deviceId}/history`), {
+          gasLevel: Number(data.gasLevel),
+          smokeLevel: Number(data.smokeLevel),
+          timestamp: data.lastUpdate,
+        });
+      }
     });
-    return () => unsubscribe();
+
+    const historyRef = query(
+      ref(db, `devices/${deviceId}/history`),
+      limitToLast(20),
+    );
+    const unsubscribeHistory = onValue(historyRef, (snap) => {
+      const hData = snap.val();
+      if (hData) {
+        setHistoryData(
+          Object.keys(hData).map((key) => ({
+            time: new Date(hData[key].timestamp).toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            gas: hData[key].gasLevel,
+            smoke: hData[key].smokeLevel,
+          })),
+        );
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeHistory();
+    };
   }, [deviceId]);
 
   const handleDelete = () => {
@@ -22,7 +65,6 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
       )
     ) {
       remove(ref(db, `users/${userId}/${deviceId}`));
-
       remove(ref(db, `devices/${deviceId}`));
     }
   };
@@ -44,32 +86,21 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
     ? Number(deviceData.smokeLevel).toFixed(1)
     : 0;
 
-  const containerStyle = isDanger
-    ? {
-        ...styles.cardContainer,
-        border: "2px solid #ff5252",
-        boxShadow: "0 0 20px rgba(255, 82, 82, 0.4)",
-      }
-    : styles.cardContainer;
-
-  let lastUpdateStr = "...";
-  if (deviceData.lastUpdate) {
-    lastUpdateStr = new Date(deviceData.lastUpdate).toLocaleString("vi-VN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      day: "2-digit",
-      month: "2-digit",
-      year: "2-digit",
-    });
-  }
-
   return (
-    <div style={containerStyle}>
-      {/* HEADER CARD */}
+    <div
+      style={
+        isDanger
+          ? {
+              ...styles.cardContainer,
+              border: "2px solid #ff5252",
+              boxShadow: "0 0 20px rgba(255, 82, 82, 0.4)",
+            }
+          : styles.cardContainer
+      }
+    >
       <div style={styles.cardHeader}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span style={{ fontSize: "1.2rem" }}>{isDanger ? "🔥" : "📍"}</span>
+          <span>{isDanger ? "🔥" : "📍"}</span>
           <h3
             style={{
               margin: 0,
@@ -81,11 +112,14 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
           </h3>
         </div>
         <span style={{ fontSize: "0.75rem", color: "#aaa" }}>
-          {lastUpdateStr}
+          {new Date(deviceData.lastUpdate).toLocaleString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          })}
         </span>
       </div>
 
-      {/* KHU VỰC CẢM BIẾN (Căn giữa đều) */}
       <div style={styles.sensorRow}>
         <div style={wrapperStyle(deviceData.configGas)}>
           <SensorCard
@@ -105,9 +139,9 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
         </div>
       </div>
 
-      {/* CONTROL PANEL (Chia hàng cột rõ ràng để không bị lệch) */}
+      <HistoryChart dataHistory={historyData} />
+
       <div style={styles.controlBox}>
-        {/* Hàng 1: Loa + Xem Key */}
         <div style={styles.controlRow}>
           <button onClick={toggleMute} style={muteBtnStyle(deviceData.isMuted)}>
             {deviceData.isMuted ? "🔇 LOA TẮT" : "🔊 LOA BẬT"}
@@ -119,8 +153,6 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
             🔑 Xem Key
           </button>
         </div>
-
-        {/* Hàng 2: Nút Gas + Nút Lửa */}
         <div style={styles.controlRow}>
           <ControlToggle
             label="Gas"
@@ -135,8 +167,6 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
             color="#00e676"
           />
         </div>
-
-        {/* Nút Gỡ */}
         <button onClick={handleDelete} style={styles.deleteBtn}>
           Gỡ thiết bị này
         </button>
@@ -151,7 +181,6 @@ const ControlToggle = ({ label, isOn, onClick, color }) => (
   </button>
 );
 
-// --- 2. DASHBOARD ---
 function Dashboard({ user }) {
   const [userDevices, setUserDevices] = useState(null);
   const [dangerList, setDangerList] = useState([]);
@@ -161,8 +190,9 @@ function Dashboard({ user }) {
   const [viewingName, setViewingName] = useState("");
 
   useEffect(() => {
-    const userRef = ref(db, `users/${user.uid}`);
-    onValue(userRef, (snapshot) => setUserDevices(snapshot.val()));
+    onValue(ref(db, `users/${user.uid}`), (snapshot) =>
+      setUserDevices(snapshot.val()),
+    );
   }, [user.uid]);
 
   useEffect(() => {
@@ -209,22 +239,13 @@ function Dashboard({ user }) {
     }).then(() => {
       setNewDeviceName("");
       setIsAddModalOpen(false);
-      handleViewKey(newKey, newDeviceName);
+      setViewingKey(newKey);
+      setViewingName(newDeviceName);
     });
-  };
-
-  const handleViewKey = (key, name) => {
-    setViewingKey(key);
-    setViewingName(name);
-  };
-  const handleCopyKey = () => {
-    navigator.clipboard.writeText(viewingKey);
-    alert("Đã copy KEY!");
   };
 
   return (
     <div style={styles.pageWrapper}>
-      {/* HEADER STICKY */}
       <div
         style={
           dangerList.length > 0
@@ -279,7 +300,6 @@ function Dashboard({ user }) {
         </div>
       </div>
 
-      {/* DANH SÁCH */}
       <div style={styles.gridList}>
         {!userDevices ? (
           <div
@@ -294,13 +314,15 @@ function Dashboard({ user }) {
               deviceId={key}
               deviceName={userDevices[key].name}
               userId={user.uid}
-              onViewKey={handleViewKey}
+              onViewKey={(k, n) => {
+                setViewingKey(k);
+                setViewingName(n);
+              }}
             />
           ))
         )}
       </div>
 
-      {/* MODAL THÊM */}
       {isAddModalOpen && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
@@ -328,7 +350,6 @@ function Dashboard({ user }) {
         </div>
       )}
 
-      {/* MODAL XEM KEY */}
       {viewingKey && (
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
@@ -341,17 +362,19 @@ function Dashboard({ user }) {
             >
               🔑 Mã Kết Nối
             </h3>
-            <p style={{ marginBottom: "5px" }}>
+            <p>
               Thiết bị: <b>{viewingName}</b>
             </p>
             <div style={styles.bigKeyBox}>{viewingKey}</div>
             <button
-              onClick={handleCopyKey}
+              onClick={() => {
+                navigator.clipboard.writeText(viewingKey);
+                alert("Đã copy!");
+              }}
               style={{
                 ...styles.modalSaveBtn,
                 width: "100%",
                 marginTop: "15px",
-                background: "#00e676",
               }}
             >
               📋 SAO CHÉP MÃ
@@ -417,18 +440,19 @@ const styles = {
     justifyContent: "center",
     gap: "20px",
   },
-
   cardContainer: {
     background: "#1e1e1e",
     padding: "20px",
     borderRadius: "20px",
     width: "100%",
-    maxWidth: "390px", // Giới hạn chiều ngang
+    maxWidth: "390px",
     border: "1px solid #333",
     boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
     display: "flex",
     flexDirection: "column",
     gap: "15px",
+    overflow: "hidden", // Thêm dòng này để bảo vệ kích thước biểu đồ
+    minWidth: "320px", // Đảm bảo card không quá nhỏ
   },
   cardHeader: {
     display: "flex",
@@ -437,13 +461,7 @@ const styles = {
     borderBottom: "1px solid rgba(255,255,255,0.1)",
     paddingBottom: "10px",
   },
-  sensorRow: {
-    display: "flex",
-    gap: "10px",
-    justifyContent: "center",
-  },
-
-  // CONTROL PANEL (Dùng Flex Column để xếp hàng dọc)
+  sensorRow: { display: "flex", gap: "10px", justifyContent: "center" },
   controlBox: {
     background: "rgba(255,255,255,0.05)",
     padding: "15px",
@@ -452,11 +470,7 @@ const styles = {
     flexDirection: "column",
     gap: "10px",
   },
-  controlRow: {
-    display: "flex",
-    gap: "10px",
-  },
-
+  controlRow: { display: "flex", gap: "10px" },
   miniBtn: {
     padding: "6px 12px",
     borderRadius: "20px",
@@ -467,9 +481,8 @@ const styles = {
     fontWeight: "bold",
     cursor: "pointer",
   },
-
   viewKeyBtn: {
-    flex: 1, // Tự giãn đều
+    flex: 1,
     padding: "10px",
     borderRadius: "10px",
     border: "1px solid #4db6ac",
@@ -488,10 +501,7 @@ const styles = {
     cursor: "pointer",
     fontSize: "0.8rem",
     borderRadius: "8px",
-    marginTop: "5px",
   },
-
-  // MODAL
   modalOverlay: {
     position: "fixed",
     top: 0,
@@ -512,7 +522,6 @@ const styles = {
     maxWidth: "340px",
     textAlign: "center",
     border: "1px solid rgba(255,255,255,0.1)",
-    boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
     boxSizing: "border-box",
   },
   modalInput: {
@@ -537,7 +546,6 @@ const styles = {
     color: "#000",
     fontWeight: "bold",
     cursor: "pointer",
-    fontSize: "1rem",
   },
   modalCancelBtn: {
     flex: 1,
@@ -547,7 +555,6 @@ const styles = {
     borderRadius: "12px",
     color: "#ccc",
     cursor: "pointer",
-    fontSize: "1rem",
   },
   bigKeyBox: {
     background: "#0a0a0a",
