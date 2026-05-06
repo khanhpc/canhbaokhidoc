@@ -158,13 +158,13 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
             label="Gas"
             isOn={deviceData.configGas}
             onClick={() => toggleConfig("configGas", deviceData.configGas)}
-            color="#00e676"
+            color="#639ad1"
           />
           <ControlToggle
             label="Lửa"
             isOn={deviceData.configSmoke}
             onClick={() => toggleConfig("configSmoke", deviceData.configSmoke)}
-            color="#00e676"
+            color="#639ad1"
           />
         </div>
         <button onClick={handleDelete} style={styles.deleteBtn}>
@@ -293,7 +293,7 @@ function Dashboard({ user }) {
           </button>
           <button
             onClick={() => signOut(auth)}
-            style={{ ...styles.miniBtn, background: "rgba(0,0,0,0.3)" }}
+            style={{ ...styles.miniBtn }}
           >
             Thoát
           </button>
@@ -398,10 +398,10 @@ function Dashboard({ user }) {
 
 const styles = {
   pageWrapper: {
-    background: "#1c1c1d",
+    background: "#e8eef2", // Nền tổng thể bạch kim ánh băng
     minHeight: "100vh",
-    color: "white",
-    fontFamily: "sans-serif",
+    color: "#05182e", // Chữ màu Navy đen 
+    fontFamily: "-apple-system, system-ui, sans-serif",
     paddingBottom: "50px",
     boxSizing: "border-box",
   },
@@ -409,29 +409,32 @@ const styles = {
     position: "sticky",
     top: 0,
     zIndex: 99,
-    background: "#1c1e21",
+    background: "#d3e0ea", // Nền header chìm xuống một xíu
     backdropFilter: "blur(10px)",
     padding: "15px 20px",
     borderBottomLeftRadius: "20px",
     borderBottomRightRadius: "20px",
-    boxShadow: "0 5px 15px rgba(0,0,0,0.3)",
+    boxShadow: "0 8px 20px rgba(5, 24, 46, 0.08)", // Đổ bóng Navy đậm
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    color: "#0d47a1", // Chữ nhấn Xanh Dương Đậm
+    fontWeight: "700",
   },
   alertHeaderDanger: {
     position: "sticky",
     top: 0,
     zIndex: 99,
-    background: "rgba(255, 65, 108, 0.95)",
+    background: "rgba(225, 29, 72, 0.95)", // Đỏ Rose cao cấp
     backdropFilter: "blur(10px)",
     padding: "20px",
     borderBottomLeftRadius: "20px",
     borderBottomRightRadius: "20px",
-    boxShadow: "0 5px 20px rgba(255, 0, 0, 0.4)",
+    boxShadow: "0 8px 25px rgba(225, 29, 72, 0.35)",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    color: "#ffffff",
   },
   gridList: {
     padding: "20px",
@@ -441,29 +444,29 @@ const styles = {
     gap: "20px",
   },
   cardContainer: {
-    background: "#1e1e1e",
+    background: "#f4f7f9", // Thẻ sáng hơn nền trang một chút
     padding: "20px",
     borderRadius: "20px",
     width: "100%",
     maxWidth: "390px",
-    border: "1px solid #333",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+    border: "1px solid #b4c5d6", // Viền kim loại
+    boxShadow: "0 10px 30px rgba(5, 24, 46, 0.06)",
     display: "flex",
     flexDirection: "column",
     gap: "15px",
-    overflow: "hidden", // Thêm dòng này để bảo vệ kích thước biểu đồ
-    minWidth: "320px", // Đảm bảo card không quá nhỏ
+    overflow: "hidden", 
+    minWidth: "320px", 
   },
   cardHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    borderBottom: "1px solid rgba(255,255,255,0.1)",
+    borderBottom: "1px solid #b4c5d6",
     paddingBottom: "10px",
   },
   sensorRow: { display: "flex", gap: "10px", justifyContent: "center" },
   controlBox: {
-    background: "rgba(255,255,255,0.05)",
+    background: "#e8eef2", // Hộp điều khiển đồng bộ nền trang
     padding: "15px",
     borderRadius: "15px",
     display: "flex",
@@ -474,9 +477,9 @@ const styles = {
   miniBtn: {
     padding: "6px 12px",
     borderRadius: "20px",
-    border: "none",
-    background: "white",
-    color: "#333",
+    border: "1px solid #b4c5d6",
+    background: "#ffffff", // Điểm nhấn sáng nhẹ cho nút mini
+    color: "#05182e",
     fontSize: "0.75rem",
     fontWeight: "bold",
     cursor: "pointer",
@@ -485,9 +488,9 @@ const styles = {
     flex: 1,
     padding: "10px",
     borderRadius: "10px",
-    border: "1px solid #4db6ac",
+    border: "1px solid #0d47a1", // Viền Xanh Dương Đậm
     background: "transparent",
-    color: "#4db6ac",
+    color: "#0d47a1",
     fontSize: "0.85rem",
     fontWeight: "bold",
     cursor: "pointer",
@@ -496,8 +499,8 @@ const styles = {
     width: "100%",
     padding: "10px",
     background: "transparent",
-    border: "1px solid #ff5252",
-    color: "#ff5252",
+    border: "1px solid #e11d48",
+    color: "#e11d48",
     cursor: "pointer",
     fontSize: "0.8rem",
     borderRadius: "8px",
@@ -508,20 +511,20 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: "rgba(0,0,0,0.85)",
+    background: "rgba(5, 24, 46, 0.7)", // Kính mờ Navy cực sang
     zIndex: 10000,
     display: "grid",
     placeItems: "center",
     padding: "20px",
   },
   modalContent: {
-    background: "#222",
+    background: "#f4f7f9",
     padding: "30px",
     borderRadius: "25px",
     width: "100%",
     maxWidth: "340px",
     textAlign: "center",
-    border: "1px solid rgba(255,255,255,0.1)",
+    border: "1px solid #b4c5d6",
     boxSizing: "border-box",
   },
   modalInput: {
@@ -529,36 +532,39 @@ const styles = {
     padding: "15px",
     marginTop: "20px",
     borderRadius: "12px",
-    border: "1px solid #444",
-    background: "#111",
-    color: "white",
+    border: "2px solid #b4c5d6",
+    background: "#e8eef2",
+    color: "#05182e",
     fontSize: "1.1rem",
     boxSizing: "border-box",
     outline: "none",
     textAlign: "center",
+    fontWeight: "600",
   },
   modalSaveBtn: {
     flex: 1,
     padding: "15px",
-    background: "#00e676",
+    background: "#0d47a1", // Nút Xanh Dương Đậm nổi bần bật
     border: "none",
     borderRadius: "12px",
-    color: "#000",
+    color: "#ffffff",
     fontWeight: "bold",
     cursor: "pointer",
+    boxShadow: "0 4px 12px rgba(13, 71, 161, 0.3)",
   },
   modalCancelBtn: {
     flex: 1,
     padding: "15px",
-    background: "#333",
+    background: "#c2d1df", // Nút hủy màu xám xanh chìm xuống
     border: "none",
     borderRadius: "12px",
-    color: "#ccc",
+    color: "#05182e",
     cursor: "pointer",
+    fontWeight: "bold",
   },
   bigKeyBox: {
-    background: "#0a0a0a",
-    color: "#00e676",
+    background: "#e8eef2",
+    color: "#0d47a1", // Mã thiết bị hiện Xanh dương đậm
     padding: "20px",
     borderRadius: "12px",
     fontFamily: "monospace",
@@ -566,7 +572,7 @@ const styles = {
     fontWeight: "bold",
     wordBreak: "break-all",
     marginTop: "15px",
-    border: "2px dashed #333",
+    border: "2px dashed #0d47a1", // Nét đứt bo viền
   },
 };
 
@@ -580,18 +586,20 @@ const muteBtnStyle = (isMuted) => ({
   padding: "10px",
   borderRadius: "10px",
   border: "none",
-  background: isMuted ? "#ffc107" : "#455a64",
-  color: isMuted ? "#000" : "#fff",
+  background: isMuted ? "#f59e0b" : "#183a5e", // Vàng hổ phách khi Mute, Xanh dương đậm khi bình thường
+  color: isMuted ? "#05182e" : "#ffffff", // Chữ tối khi nền sáng, chữ trắng khi nền đậm
   fontWeight: "bold",
   fontSize: "0.8rem",
   cursor: "pointer",
+  boxShadow: isMuted ? "0 4px 10px rgba(245, 158, 11, 0.3)" : "none", // Thêm tí bóng cho nút Mute nổi bật
 });
+
 const toggleBtnStyle = (isOn, color) => ({
   padding: "10px",
   borderRadius: "10px",
   border: "none",
-  background: isOn ? color : "#444",
-  color: isOn ? "#000" : "#ccc",
+  background: isOn ? color : "#183a5e", // Lấy màu truyền vào khi ON, Xanh dương đậm khi OFF
+  color: isOn ? "#05182e" : "#d3e0ea", // Chữ màu Navy đen khi ON, chữ xanh băng nhạt khi OFF
   fontSize: "0.8rem",
   fontWeight: "bold",
   flex: 1,
