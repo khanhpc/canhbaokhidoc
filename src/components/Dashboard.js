@@ -158,13 +158,13 @@ const DeviceItem = ({ deviceId, deviceName, userId, onViewKey }) => {
             label="Gas"
             isOn={deviceData.configGas}
             onClick={() => toggleConfig("configGas", deviceData.configGas)}
-            color="#639ad1"
+            color="#d1e1f1"
           />
           <ControlToggle
             label="Lửa"
             isOn={deviceData.configSmoke}
             onClick={() => toggleConfig("configSmoke", deviceData.configSmoke)}
-            color="#639ad1"
+            color="#d1e1f1"
           />
         </div>
         <button onClick={handleDelete} style={styles.deleteBtn}>
