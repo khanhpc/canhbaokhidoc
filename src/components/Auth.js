@@ -9,7 +9,7 @@ import {
 function Auth() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState(""); // State mới cho Xác nhận mật khẩu
+  const [confirmPass, setConfirmPass] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errMsg, setErrMsg] = useState("");
@@ -17,14 +17,11 @@ function Auth() {
 
   const handleAuth = async (e) => {
     e.preventDefault();
-
-    // 1. Lọc sạch khoảng trắng ở email
     const cleanEmail = email.trim();
 
-    // 2. Kiểm tra mật khẩu nhập lại nếu đang ở chế độ Đăng ký
     if (isRegister && pass !== confirmPass) {
       setErrMsg("❌ Mật khẩu xác nhận không khớp!");
-      return; // Dừng lại luôn, không gọi Firebase nữa
+      return;
     }
 
     setIsLoading(true);
@@ -33,11 +30,9 @@ function Auth() {
     try {
       if (isRegister) {
         await createUserWithEmailAndPassword(auth, cleanEmail, pass);
-        // Đăng ký xong thì chuyển trang luôn, không cần alert nữa cho mượt
       } else {
         await signInWithEmailAndPassword(auth, cleanEmail, pass);
       }
-      // 3. Thành công là chuyển trang luôn, component sẽ tự huỷ
       navigate("/");
     } catch (error) {
       console.error("Lỗi đăng nhập:", error.code);
@@ -50,8 +45,6 @@ function Auth() {
       } else {
         setErrMsg("⚠️ Lỗi hệ thống: " + error.message);
       }
-
-      // 4. Chỉ tắt Loading khi có lỗi (để người dùng còn bấm thử lại)
       setIsLoading(false);
     }
   };
@@ -60,11 +53,12 @@ function Auth() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#0f2027",
+        // Đổi sang màu xanh nước biển nhạt (Gradient nhẹ cho hiện đại)
+        background: "linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        color: "white",
+        color: "#2c3e50", // Đổi chữ sang màu tối để dễ đọc trên nền sáng
         fontFamily: "sans-serif",
       }}
     >
@@ -74,8 +68,8 @@ function Auth() {
           input:-webkit-autofill:hover, 
           input:-webkit-autofill:focus, 
           input:-webkit-autofill:active{
-              -webkit-box-shadow: 0 0 0 30px rgba(255,255,255,0.1) inset !important;
-              -webkit-text-fill-color: white !important;
+              -webkit-box-shadow: 0 0 0 30px #fff inset !important;
+              -webkit-text-fill-color: #333 !important;
               transition: background-color 5000s ease-in-out 0s;
           }
         `}
@@ -84,27 +78,27 @@ function Auth() {
       <form
         onSubmit={handleAuth}
         style={{
-          background: "rgba(255,255,255,0.05)",
+          background: "rgba(255, 255, 255, 0.8)", // Form trắng trong suốt nhẹ
           padding: "40px",
           borderRadius: "20px",
           width: "100%",
           maxWidth: "340px",
           boxSizing: "border-box",
           backdropFilter: "blur(10px)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          boxShadow: "0 15px 35px rgba(0,0,0,0.5)",
-          transition: "all 0.3s ease", // Giúp hiệu ứng đổi Form mượt hơn
+          border: "1px solid rgba(255, 255, 255, 0.3)",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.1)", // Đổ bóng nhẹ nhàng hơn
+          transition: "all 0.3s ease",
         }}
       >
-        <h2 style={{ textAlign: "center", marginBottom: "20px", letterSpacing: "2px" }}>
+        <h2 style={{ textAlign: "center", marginBottom: "20px", letterSpacing: "1px", color: "#1976d2" }}>
           {isRegister ? "ĐĂNG KÝ" : "ĐĂNG NHẬP"}
         </h2>
 
         {errMsg && (
           <div style={{
-            background: "rgba(255, 59, 48, 0.1)", color: "#ff3b30", padding: "10px",
+            background: "#ffebee", color: "#d32f2f", padding: "10px",
             borderRadius: "8px", marginBottom: "15px", fontSize: "0.85rem",
-            textAlign: "center", border: "1px solid rgba(255, 59, 48, 0.3)"
+            textAlign: "center", border: "1px solid #ffcdd2"
           }}>
             {errMsg}
           </div>
@@ -120,8 +114,8 @@ function Auth() {
           disabled={isLoading}
           style={{
             width: "100%", padding: "12px", marginBottom: "15px",
-            borderRadius: "8px", border: "none", boxSizing: "border-box",
-            background: "rgba(255,255,255,0.1)", color: "#fff", outline: "none"
+            borderRadius: "8px", border: "1px solid #ccc", boxSizing: "border-box",
+            background: "#fff", color: "#333", outline: "none"
           }}
           required
         />
@@ -136,14 +130,13 @@ function Auth() {
           disabled={isLoading}
           style={{
             width: "100%", padding: "12px",
-            marginBottom: isRegister ? "15px" : "25px", // Đổi khoảng cách tuỳ trạng thái
-            borderRadius: "8px", border: "none", boxSizing: "border-box",
-            background: "rgba(255,255,255,0.1)", color: "#fff", outline: "none"
+            marginBottom: isRegister ? "15px" : "25px",
+            borderRadius: "8px", border: "1px solid #ccc", boxSizing: "border-box",
+            background: "#fff", color: "#333", outline: "none"
           }}
           required
         />
 
-        {/* Ô XÁC NHẬN MẬT KHẨU - Chỉ hiện khi Đăng Ký */}
         {isRegister && (
           <input
             type="password"
@@ -155,10 +148,10 @@ function Auth() {
             disabled={isLoading}
             style={{
               width: "100%", padding: "12px", marginBottom: "25px",
-              borderRadius: "8px", border: "none", boxSizing: "border-box",
-              background: "rgba(255,255,255,0.1)", color: "#fff", outline: "none"
+              borderRadius: "8px", border: "1px solid #ccc", boxSizing: "border-box",
+              background: "#fff", color: "#333", outline: "none"
             }}
-            required={isRegister} // Cực quan trọng: Chuyển sang đăng nhập thì ko bắt buộc nhập ô này
+            required={isRegister}
           />
         )}
 
@@ -167,8 +160,8 @@ function Auth() {
           disabled={isLoading}
           style={{
             width: "100%", padding: "14px",
-            background: isLoading ? "#555" : "#C5A059",
-            color: isLoading ? "#aaa" : "#000",
+            background: isLoading ? "#bdc3c7" : "#1976d2", // Màu xanh dương đậm cho nút
+            color: "#fff",
             border: "none", borderRadius: "8px",
             cursor: isLoading ? "not-allowed" : "pointer",
             fontWeight: "bold", letterSpacing: "1px", transition: "all 0.3s"
@@ -181,12 +174,13 @@ function Auth() {
           onClick={() => {
             if (!isLoading) {
               setIsRegister(!isRegister);
-              setErrMsg(""); // Bấm chuyển qua lại thì xoá lỗi cũ đi cho sạch
+              setErrMsg("");
             }
           }}
           style={{
             marginTop: "25px", cursor: isLoading ? "default" : "pointer",
-            textAlign: "center", color: "#999", fontSize: "0.85rem"
+            textAlign: "center", color: "#546e7a", fontSize: "0.85rem",
+            textDecoration: "underline"
           }}
         >
           {isRegister ? "Đã có tài khoản? Đăng nhập ngay" : "Chưa có tài khoản? Đăng ký mới"}
